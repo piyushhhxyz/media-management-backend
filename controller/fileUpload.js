@@ -20,10 +20,15 @@ exports.localFileUpload = async(req,res) => {
     }
 }
 
-async function uploadFileToCloudinary(file, folder){
+async function uploadFileToCloudinary(file, folder, quality){
     const options = {folder}
-    options.resource_type = "auto"
     console.log("tempFilePath",file.tempFilePath)
+    
+    if(quality) {
+        options.quality = 10
+    }
+    
+    options.resource_type = "auto"
     return await cloudinary.uploader.upload(file.tempFilePath, options)
 }
 
@@ -56,7 +61,7 @@ exports.imageUpload = async(req,res) => {
             message: "Image Successfully Uploaded"
         })
     }catch(e){
-        return res.status(500).json({
+        return res.status(400).json({
             success: false ,
             message: "Error Occured While Uploading"
         })
@@ -91,9 +96,38 @@ exports.videoUpload =  async(req,res) => {
             message: "Video Successfully Uploaded"
         })
     }catch(e){
-        return res.status(500).json({
+        return res.status(400).json({
             success: false ,
             message: "Error Occured While Uploading Video"
+        })
+    }
+}
+
+exports.imageSizeReducer = async(req,res) => {
+    try{
+        const {name,tags,email} = req.body 
+        const file = req.files.imageFile
+        //validation
+        const supportedTypes = ["mp4","mov"]
+        
+        const response = await uploadFileToCloudinary(file,"Bhawsar",10)
+        console.log("response",response)
+        //db mai entry 
+        const fileCreate = await File.create({
+            name,
+            tags,
+            email,
+            imageUrl: response.secure_url
+        })
+        res.status(200).json({
+            success: true ,
+            imageUrl: response.secure_url ,
+            message: "compressed Image Successfully Uploaded"
+        })
+    }catch(e){
+        return res.status(400).json({
+            success: false ,
+            message: "Error Occured While Compressing Photo"
         })
     }
 }
